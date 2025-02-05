@@ -1,0 +1,60 @@
+package main
+
+import (
+	"log"
+	"math"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
+const (
+	// 仮装画面のピクセル数
+	pixelWidth  = windowWidth / 2  // 仮装ピクセル数 - 横
+	pixelHeight = windowHeight / 2 // 仮装ピクセル数 - 縦
+
+	// 実際の画面
+	windowWidth  = 640 // 画面サイズ - 横
+	windowHeight = 480 // 画面サイズ - 縦
+
+	distanceScale = 2.0
+)
+
+type Game struct {
+	pixels   []byte
+	mousePos vec2
+}
+
+func (g *Game) Update() error {
+	g.mousePos.x, g.mousePos.y = ebiten.CursorPosition()
+	return nil
+}
+
+func (g *Game) Draw(screen *ebiten.Image) {
+	if g.pixels == nil {
+		g.pixels = make([]byte, pixelWidth*pixelHeight*4)
+	}
+
+	for i := 0; i < len(g.pixels)/4; i++ {
+		pixelPos := vec2{i % pixelWidth, i / pixelWidth}
+		distance := distance(g.mousePos, pixelPos) * distanceScale
+		g.pixels[i*4] = byte(pixelPos.x * 255 / pixelWidth)
+		g.pixels[i*4+1] = byte((pixelHeight - pixelPos.y) * 255 / pixelWidth)
+		g.pixels[i*4+2] = byte(255 - math.Min(255, distance))
+		g.pixels[i*4+3] = byte(255)
+	}
+
+	screen.WritePixels(g.pixels)
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return pixelWidth, pixelHeight
+}
+
+func main() {
+	g := &Game{}
+	ebiten.SetWindowSize(windowWidth, windowHeight)
+	ebiten.SetWindowTitle("250205game by matsufriends")
+	if err := ebiten.RunGame(g); err != nil {
+		log.Fatal(err)
+	}
+}
