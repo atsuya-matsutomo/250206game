@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Go Project Without Debugger",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "sh",
+      "args": ["-c", "go mod tidy && go run ."],
+      "console": "integratedTerminal"
+    }
+  ]
+}
