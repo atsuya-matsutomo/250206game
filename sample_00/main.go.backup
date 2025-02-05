@@ -1,0 +1,45 @@
+package main
+
+import (
+	"fmt"
+)
+
+const (
+	adultAge   = 18
+	defaultAge = adultAge - 1
+)
+
+type Person struct {
+	age int
+}
+
+func (p *Person) isAdult() bool {
+	return p.age >= adultAge
+}
+
+func (p *Person) introduction() {
+	if p.isAdult() {
+		fmt.Println("I'm an adult.")
+	} else {
+		fmt.Println("I'm a minor.")
+	}
+}
+
+func (p *Person) hbd1() {
+	p.age++
+}
+
+func (p Person) hbd2() {
+	p.age++
+}
+
+func main() {
+	taro := Person{age: defaultAge}
+	jiro := Person{age: defaultAge}
+
+	taro.hbd1() // ポインタあり
+	jiro.hbd2() // ポインタなし
+
+	taro.introduction() // I"m an adult.
+	jiro.introduction() // I"m a minor.
+}
