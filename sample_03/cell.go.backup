@@ -1,0 +1,46 @@
+package main
+
+type cell struct {
+	x, y    int
+	isAlive bool
+	color   []byte
+}
+
+func newCell(x, y int, isAlive bool) *cell {
+	cell := cell{
+		x:       x,
+		y:       y,
+		isAlive: isAlive,
+	}
+	cell.setIsAlive(isAlive)
+	cell.setIsAlive(isAlive) // 2回呼び出すことで、恒久的な色を反映
+	return &cell
+}
+
+func (cell *cell) draw(width, height int, pixels []byte) {
+	x := cell.x
+	y := cell.y
+	pixelIndex := (y*width + x) * 4
+	pixels[pixelIndex] = cell.color[0]
+	pixels[pixelIndex+1] = cell.color[1]
+	pixels[pixelIndex+2] = cell.color[2]
+	pixels[pixelIndex+3] = cell.color[3]
+}
+
+func (cell *cell) setIsAlive(isAlive bool) {
+	if isAlive {
+		if cell.isAlive { // 生存キープ 白色
+			cell.color = []byte{255, 255, 255, 255}
+		} else { // 誕生 緑色
+			cell.color = []byte{0, 255, 0, 255}
+		}
+	} else {
+		if cell.isAlive { // 死亡 赤色
+			cell.color = []byte{255, 0, 0, 255}
+		} else { // 死亡キープ 黒色
+			cell.color = []byte{0, 0, 0, 0}
+		}
+	}
+
+	cell.isAlive = isAlive
+}

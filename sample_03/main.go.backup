@@ -1,0 +1,56 @@
+package main
+
+import (
+	"log"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
+const (
+	// 仮装画面のピクセル数
+	pixelWidth  = windowWidth / 4  // 仮装ピクセル数 - 横
+	pixelHeight = windowHeight / 4 // 仮装ピクセル数 - 縦
+
+	// 実際の画面
+	windowWidth  = 640 // 画面サイズ - 横
+	windowHeight = 480 // 画面サイズ - 縦
+
+	// ライフゲーム
+	fps      = 20
+	fillRate = 10
+)
+
+type Game struct {
+	pixels   []byte
+	lifeGame *lifeGame
+}
+
+func (g *Game) Update() error {
+	g.lifeGame.update()
+	return nil
+}
+
+func (g *Game) Draw(screen *ebiten.Image) {
+	if g.pixels == nil {
+		g.pixels = make([]byte, pixelWidth*pixelHeight*4)
+	}
+
+	g.lifeGame.draw(g.pixels)
+	screen.WritePixels(g.pixels)
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return pixelWidth, pixelHeight
+}
+
+func main() {
+	lifeGame := newLifeGame(fps, pixelWidth, pixelHeight, fillRate)
+	g := &Game{
+		lifeGame: lifeGame,
+	}
+	ebiten.SetWindowSize(windowWidth, windowHeight)
+	ebiten.SetWindowTitle("250205game by matsufriends")
+	if err := ebiten.RunGame(g); err != nil {
+		log.Fatal(err)
+	}
+}
