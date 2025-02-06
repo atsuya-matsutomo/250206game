@@ -1,0 +1,200 @@
+package main
+
+import (
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+)
+
+const (
+	scale        = 6
+	jumpPower    = 24 * scale
+	flappyWeight = 1 * scale
+	gravity      = 9.8 * scale
+)
+
+type flappyGame struct {
+	frame     int        // フレーム数
+	fps       int        // fps
+	isUpdate  bool       // 更新
+	physics2d *physics2d // 物理演算
+
+	missed  bool     // ミス
+	level   int      // レベル
+	flappyA *flappy  // 鳥
+	flappyB *flappy  // 鳥
+	dokans  []*dokan // 土管
+}
+
+func newFlappyGame(fps int) *flappyGame {
+	return &flappyGame{
+		frame: 0,
+		fps:   fps,
+
+		physics2d: newPhysics2d(gravity),
+
+		missed:  false,
+		level:   0,
+		flappyA: newFlappyGeneral(true),
+		flappyB: newFlappyGeneral(false),
+		dokans:  []*dokan{newDookan(0)},
+	}
+}
+
+func (game *flappyGame) reset() {
+	game.frame = 0
+	game.isUpdate = false
+	game.missed = false
+	game.level = 0
+	game.flappyA = newFlappyGeneral(true)
+	game.flappyB = newFlappyGeneral(false)
+	game.dokans = []*dokan{newDookan(0)}
+}
+
+func newFlappyGeneral(isA bool) *flappy {
+	// 画面の中央、左から1/5の位置
+	posf := vec2f{float64(pixelWidth) / 5, float64(pixelHeight) / 2}
+	if isA {
+		posf.x -= 20
+	} else {
+		posf.x += 20
+	}
+	return newFlappy(posf, flappyWeight, jumpPower)
+}
+
+func (game *flappyGame) addDokan() {
+	dokan := newDookan(game.level)
+	game.dokans = append(game.dokans, dokan)
+}
+
+func (game *flappyGame) draw(pixels []byte) {
+	var fillColor []byte
+	if game.missed {
+		fillColor = []byte{255, 0, 0, 255}
+	} else {
+		fillColor = []byte{0, 0, 0, 255}
+	}
+	for i := 0; i < len(pixels)/4; i++ {
+		pixels[i*4] = fillColor[0]
+		pixels[i*4+1] = fillColor[1]
+		pixels[i*4+2] = fillColor[2]
+		pixels[i*4+3] = fillColor[3]
+	}
+
+	game.flappyA.draw(pixels)
+	game.flappyB.draw(pixels)
+
+	for _, dokan := range game.dokans {
+		dokan.draw(pixels)
+	}
+
+	game.drawScore(pixels)
+}
+
+func (game *flappyGame) drawScore(pixels []byte) {
+	for i := 0; i < game.level; i++ {
+		x := 4 + i%10*4
+		y := 4 + i/10*4
+
+		if x < 0 || x >= pixelWidth || y < 0 || y >= pixelHeight {
+			continue
+		}
+
+		// yellow
+		color := []byte{255, 255, 0, 255}
+		pixelIndex := (x + y*pixelWidth) * 4
+		pixels[pixelIndex] = color[0]
+		pixels[pixelIndex+1] = color[1]
+		pixels[pixelIndex+2] = color[2]
+		pixels[pixelIndex+3] = color[3]
+	}
+}
+
+func (game *flappyGame) update() {
+	// リセット処理
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		game.reset()
+	}
+
+	// 開始処理
+	if !game.isUpdate && inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		game.isUpdate = true
+		game.flappyA.jump()
+	}
+
+	game.frame++
+
+	if game.frame%(60/game.fps) != 0 {
+		return
+	}
+
+	if game.missed || !game.isUpdate {
+		return
+	}
+
+	game.physics2d.updatePhysics(game.fps, game.flappyA)
+	game.physics2d.updatePhysics(game.fps, game.flappyB)
+
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		game.flappyA.jump()
+	}
+
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
+		game.flappyB.jump()
+	}
+
+	if game.dokans != nil {
+		for _, dokan := range game.dokans {
+			dokan.update(game.level)
+		}
+	}
+
+	game.checkDead()
+
+	if game.flappyA.isDead || game.flappyB.isDead {
+		game.missed = true
+	}
+
+	for i, dokan := range game.dokans {
+		if dokan.x < nextDokanSpawnThresholdX && !dokan.isSpawnPassed {
+			game.addDokan()
+			dokan.isSpawnPassed = true
+		}
+
+		// スコアはAだけ
+		if dokan.x < game.flappyA.pos.x && !dokan.isScored {
+			game.level++
+			dokan.isScored = true
+		}
+
+		if dokan.isDead {
+			game.dokans = append(game.dokans[:i], game.dokans[i+1:]...)
+		}
+	}
+
+}
+
+func (game *flappyGame) checkDead() {
+	// 画面外に出たらミス
+	flappyPosA := game.flappyA.getPos()
+	if flappyPosA.y < 0 || flappyPosA.y >= pixelHeight {
+		game.flappyA.isDead = true
+	}
+
+	flappyPosB := game.flappyB.getPos()
+	if flappyPosB.y < 0 || flappyPosB.y >= pixelHeight {
+		game.flappyB.isDead = true
+	}
+
+	// 土管との当たり判定
+	for _, dokan := range game.dokans {
+		if dokan.isHit(game.flappyA) {
+			game.flappyA.isDead = true
+		}
+	}
+
+	for _, dokan := range game.dokans {
+		if dokan.isHit(game.flappyB) {
+			game.flappyB.isDead = true
+		}
+	}
+}

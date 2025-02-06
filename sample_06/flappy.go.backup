@@ -1,0 +1,69 @@
+package main
+
+type flappy struct {
+	pos       vec2f
+	vel       vec2f
+	weight    float64
+	jumpPower float64
+	isDead    bool
+	radius    int
+}
+
+func (f *flappy) getPos() vec2f {
+	return f.pos
+}
+
+func (f *flappy) setPos(pos vec2f) {
+	f.pos = pos
+}
+
+func (f *flappy) getVel() vec2f {
+	return f.vel
+}
+
+func (f *flappy) setVel(vel vec2f) {
+	f.vel = vel
+}
+
+func (f *flappy) getWeight() float64 {
+	return f.weight
+}
+
+func newFlappy(pos vec2f, weight, jumpPower float64) *flappy {
+	return &flappy{
+		pos:       pos,
+		vel:       vec2f{},
+		weight:    weight,
+		jumpPower: jumpPower,
+		isDead:    false,
+		radius:    4,
+	}
+}
+
+func (f *flappy) draw(pixels []byte) {
+	pos := vec2{int(f.pos.x), int(f.pos.y)}
+	for y := -f.radius; y <= f.radius; y++ {
+		for x := -f.radius; x <= f.radius; x++ {
+			fillPos := vec2{pos.x + x, pos.y + y}
+			diff := fillPos.sub(pos)
+			if diff.magnitude() <= float64(f.radius) {
+				fillX := fillPos.x
+				fillY := fillPos.y
+
+				if fillX < 0 || fillX >= pixelWidth || fillY < 0 || fillY >= pixelHeight {
+					continue
+				}
+
+				pixelIndex := (fillY*pixelWidth + fillX) * 4
+				pixels[pixelIndex] = 255
+				pixels[pixelIndex+1] = 255
+				pixels[pixelIndex+2] = 255
+				pixels[pixelIndex+3] = 255
+			}
+		}
+	}
+}
+
+func (f *flappy) jump() {
+	f.vel.y = -f.jumpPower
+}

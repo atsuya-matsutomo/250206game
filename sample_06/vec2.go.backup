@@ -1,0 +1,30 @@
+package main
+
+import (
+	"math"
+)
+
+type vec2 struct {
+	x, y int
+}
+
+func (a *vec2) add(b vec2) vec2 {
+	return vec2{a.x + b.x, a.y + b.y}
+}
+
+func (a *vec2) sub(b vec2) vec2 {
+	return vec2{a.x - b.x, a.y - b.y}
+}
+
+func (a *vec2) sqrMagnitude() float64 {
+	return float64(a.x*a.x + a.y*a.y)
+}
+
+func (a *vec2) magnitude() float64 {
+	return math.Sqrt(a.sqrMagnitude())
+}
+
+func (a *vec2) distance(b vec2) float64 {
+	dif := a.sub(b)
+	return dif.magnitude()
+}
