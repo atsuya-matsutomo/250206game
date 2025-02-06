@@ -1,0 +1,96 @@
+package main
+
+import (
+	"math/rand"
+)
+
+type dokan struct {
+	x             float64 // x座標
+	y             int     // 高さ(隙間の中心)
+	space         int     // 隙間
+	isScored      bool    // スコアを取得したか
+	isSpawnPassed bool    // 次のドカン生成位置を通過したか
+	isDead        bool    // 終了しているか
+}
+
+const (
+	edgeOffset = 50 // 上下に必ず表示したいpx数
+	width      = 10 // 障害物の幅
+)
+
+func newDookan(level int) *dokan {
+	space := toSpace(level)
+
+	minHeight := edgeOffset + space/2
+	maxHeight := pixelHeight - edgeOffset - space/2
+
+	x := pixelWidth + width/2
+	y := rand.Intn(maxHeight-minHeight) + minHeight
+
+	return &dokan{
+		space: space,
+		x:     float64(x),
+		y:     y,
+	}
+}
+
+func (dokan *dokan) draw(pixels []byte) {
+	// 上部の塗りつぶし
+	upperY := dokan.y - dokan.space/2
+	for y := 0; y < upperY; y++ {
+		for x := dokan.x - width/2; x < dokan.x+width/2; x++ {
+			pos := vec2{int(x), y}
+			dokan.tryDraw(pos, []byte{255, 255, 255, 255}, pixels)
+		}
+	}
+
+	// 下部の塗りつぶし
+	lowerY := dokan.y + dokan.space/2
+	for y := lowerY; y < pixelHeight; y++ {
+		for x := dokan.x - width/2; x < dokan.x+width/2; x++ {
+			pos := vec2{int(x), y}
+			dokan.tryDraw(pos, []byte{255, 255, 255, 255}, pixels)
+		}
+	}
+}
+
+func (dokan *dokan) tryDraw(pos vec2, color, pixels []byte) {
+	x := pos.x
+	y := pos.y
+
+	if x < 0 || x >= pixelWidth || y < 0 || y >= pixelHeight {
+		return
+	}
+
+	pixelIndex := (y*pixelWidth + x) * 4
+	pixels[pixelIndex] = color[0]
+	pixels[pixelIndex+1] = color[1]
+	pixels[pixelIndex+2] = color[2]
+	pixels[pixelIndex+3] = color[3]
+}
+
+func (f *dokan) update(level int) {
+	f.x -= toSpeed(level)
+
+	if f.x < -width/2 {
+		f.isDead = true
+	}
+}
+
+func (dokan *dokan) isHit(flappy *flappy) bool {
+
+	leftX := int(dokan.x) - width/2 - flappy.radius
+	rightX := int(dokan.x) + width/2 + flappy.radius
+	upperY := dokan.y - dokan.space/2 + flappy.radius
+	lowerY := dokan.y + dokan.space/2 - flappy.radius
+
+	x := int(flappy.pos.x)
+	y := int(flappy.pos.y)
+
+	if leftX <= x && x <= rightX {
+		if y <= upperY || lowerY <= y {
+			return true
+		}
+	}
+	return false
+}

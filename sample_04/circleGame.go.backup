@@ -46,10 +46,10 @@ func (game *circleGame) draw(pixels []byte) {
 	}
 
 	game.circle.draw(game.mousePos, pixels)
-	game.drawGauge(pixels)
+	game.drawScore(pixels)
 }
 
-func (game *circleGame) drawGauge(pixels []byte) {
+func (game *circleGame) drawScore(pixels []byte) {
 	for i := 0; i < game.level; i++ {
 		x := 4 + i%10*4
 		y := 4 + i/10*4

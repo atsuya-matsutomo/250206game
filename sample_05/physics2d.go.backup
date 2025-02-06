@@ -1,0 +1,31 @@
+package main
+
+type physics2d struct {
+	gravity float64
+}
+
+func newPhysics2d(gravity float64) *physics2d {
+	return &physics2d{gravity: gravity}
+}
+
+type rigid2d interface {
+	getPos() vec2f
+	setPos(vec2f)
+	getVel() vec2f
+	setVel(vec2f)
+	getWeight() float64
+}
+
+func (p *physics2d) updatePhysics(fps int, r rigid2d) {
+	pos := r.getPos()
+	vel := r.getVel()
+
+	deltaTime := 1.0 / float64(fps)
+	vel.y += p.gravity * r.getWeight() * deltaTime
+
+	pos.x += vel.x * deltaTime
+	pos.y += vel.y * deltaTime
+
+	r.setPos(pos)
+	r.setVel(vel)
+}

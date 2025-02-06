@@ -1,0 +1,55 @@
+package main
+
+import (
+	"log"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
+const (
+	// 仮装画面のピクセル数
+	pixelWidth  = windowWidth / 2  // 仮装ピクセル数 - 横
+	pixelHeight = windowHeight / 2 // 仮装ピクセル数 - 縦
+
+	// 実際の画面
+	windowWidth  = 640 // 画面サイズ - 横
+	windowHeight = 480 // 画面サイズ - 縦
+
+	// サークルゲーム
+	fps = 60
+)
+
+type Game struct {
+	pixels     []byte
+	flappyGame *flappyGame
+}
+
+func (game *Game) Update() error {
+	game.flappyGame.update()
+	return nil
+}
+
+func (game *Game) Draw(screen *ebiten.Image) {
+	if game.pixels == nil {
+		game.pixels = make([]byte, pixelWidth*pixelHeight*4)
+	}
+
+	game.flappyGame.draw(game.pixels)
+	screen.WritePixels(game.pixels)
+}
+
+func (game *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return pixelWidth, pixelHeight
+}
+
+func main() {
+	flappyGame := newFlappyGame(fps)
+	g := &Game{
+		flappyGame: flappyGame,
+	}
+	ebiten.SetWindowSize(windowWidth, windowHeight)
+	ebiten.SetWindowTitle("250205game by matsufriends")
+	if err := ebiten.RunGame(g); err != nil {
+		log.Fatal(err)
+	}
+}
