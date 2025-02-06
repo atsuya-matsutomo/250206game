@@ -43,9 +43,9 @@ func (game *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func main() {
-	lifeGame := newLifeGame(fps)
+	circleGame := newCircleGame(fps)
 	g := &Game{
-		circleGame: lifeGame,
+		circleGame: circleGame,
 	}
 	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowTitle("250205game by matsufriends")

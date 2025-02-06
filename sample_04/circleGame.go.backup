@@ -15,7 +15,7 @@ type circleGame struct {
 	circle   *circle // 円
 }
 
-func newLifeGame(fps int) *circleGame {
+func newCircleGame(fps int) *circleGame {
 	return &circleGame{
 		frame:  0,
 		fps:    fps,
