@@ -1,0 +1,66 @@
+package main
+
+import (
+	"math/rand"
+)
+
+type circle struct {
+	pos                             vec2
+	radius, initLeftTime, leftFrame int
+}
+
+func newCircle(level int) *circle {
+	radius := toRadius(level)
+	leftFrame := toLeftFrame(level)
+
+	x := rand.Intn(pixelWidth-2*radius) + radius
+	y := rand.Intn(pixelHeight-2*radius) + radius
+	circle := circle{
+		pos:          vec2{x, y},
+		radius:       radius,
+		initLeftTime: leftFrame,
+		leftFrame:    leftFrame,
+	}
+	return &circle
+}
+
+func (circle *circle) draw(mousePos vec2, pixels []byte) {
+	rate := float64(circle.leftFrame) / float64(circle.initLeftTime)
+	alpha := byte(255 * rate)
+	var color []byte
+	if circle.isInCircle(mousePos) {
+		color = []byte{0, alpha, 0, 255}
+	} else {
+		color = []byte{alpha, alpha, alpha, 255}
+	}
+
+	for difY := -circle.radius; difY < circle.radius; difY++ {
+		for difX := -circle.radius; difX < circle.radius; difX++ {
+			fillPos := vec2{circle.pos.x + difX, circle.pos.y + difY}
+			if fillPos.x < 0 || fillPos.x >= pixelWidth || fillPos.y < 0 || fillPos.y >= pixelHeight {
+				continue
+			}
+
+			dif := sub(fillPos, circle.pos)
+
+			if dif.magnitude() < float64(circle.radius) {
+				pixelIndex := (circle.pos.x + difX + (circle.pos.y+difY)*pixelWidth) * 4
+				pixels[pixelIndex] = color[0]
+				pixels[pixelIndex+1] = color[1]
+				pixels[pixelIndex+2] = color[2]
+				pixels[pixelIndex+3] = color[3]
+			}
+		}
+	}
+}
+
+func (circle *circle) update() {
+	if circle.leftFrame > 0 {
+		circle.leftFrame--
+	}
+}
+
+func (circle *circle) isInCircle(mousePos vec2) bool {
+	dif := sub(mousePos, circle.pos)
+	return dif.magnitude() < float64(circle.radius)
+}

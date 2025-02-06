@@ -1,0 +1,103 @@
+package main
+
+import (
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+)
+
+type circleGame struct {
+	frame int // フレーム数
+	fps   int // fps
+
+	mousePos vec2    // マウスの位置
+	missed   bool    // ミス
+	level    int     // レベル
+	circle   *circle // 円
+}
+
+func newLifeGame(fps int) *circleGame {
+	return &circleGame{
+		frame:  0,
+		fps:    fps,
+		missed: false,
+		level:  0,
+		circle: newCircle(0),
+	}
+}
+
+func (game *circleGame) reset() {
+	game.missed = false
+	game.level = 0
+	game.circle = newCircle(0)
+}
+
+func (game *circleGame) draw(pixels []byte) {
+	var fillColor []byte
+	if game.missed {
+		fillColor = []byte{255, 0, 0, 255}
+	} else {
+		fillColor = []byte{0, 0, 0, 255}
+	}
+	for i := 0; i < len(pixels)/4; i++ {
+		pixels[i*4] = fillColor[0]
+		pixels[i*4+1] = fillColor[1]
+		pixels[i*4+2] = fillColor[2]
+		pixels[i*4+3] = fillColor[3]
+	}
+
+	game.circle.draw(game.mousePos, pixels)
+	game.drawGauge(pixels)
+}
+
+func (game *circleGame) drawGauge(pixels []byte) {
+	for i := 0; i < game.level; i++ {
+		x := 4 + i%10*4
+		y := 4 + i/10*4
+
+		if x < 0 || x >= pixelWidth || y < 0 || y >= pixelHeight {
+			continue
+		}
+
+		// yellow
+		color := []byte{255, 255, 0, 255}
+		pixelIndex := (x + y*pixelWidth) * 4
+		pixels[pixelIndex] = color[0]
+		pixels[pixelIndex+1] = color[1]
+		pixels[pixelIndex+2] = color[2]
+		pixels[pixelIndex+3] = color[3]
+	}
+}
+
+func (game *circleGame) update() {
+	mouseX, mouseY := ebiten.CursorPosition()
+	game.mousePos = vec2{mouseX, mouseY}
+
+	// リセット処理
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		game.reset()
+	}
+
+	game.frame++
+	if game.frame%(60/game.fps) != 0 {
+		return
+	}
+
+	if game.missed {
+		return
+	}
+
+	game.circle.update()
+
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		if game.circle.isInCircle(game.mousePos) {
+			game.level++
+			game.circle = newCircle(game.level)
+		} else {
+			game.missed = true
+		}
+	}
+
+	if game.circle.leftFrame == 0 {
+		game.missed = true
+	}
+}

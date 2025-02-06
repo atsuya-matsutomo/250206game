@@ -1,0 +1,25 @@
+package main
+
+const (
+	maxLevel = 100.0
+
+	startRadius = 70.0
+	endRadius   = 20.0
+
+	startLeftFrame = 120.0 // 2秒
+	endLeftFrame   = 30.0  // 0.5秒
+)
+
+func lerp(start, end, rate float64) float64 {
+	return (1-rate)*start + rate*end
+}
+
+func toRadius(level int) int {
+	rate := float64(level) / maxLevel
+	return int(lerp(startRadius, endRadius, rate))
+}
+
+func toLeftFrame(level int) int {
+	rate := float64(level) / maxLevel
+	return int(lerp(startLeftFrame, endLeftFrame, rate))
+}
